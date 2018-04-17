@@ -1,4 +1,4 @@
-import java.io.{File, PrintWriter}
+import java.io._
 
 import play.api.libs.json.{JsValue, Json}
 import scalaj.http.Http
@@ -59,41 +59,34 @@ class DCConCrawler {
       .header("Cookie", "ci_c=61e286cd35e229c36c8d24d17e4289fe")
       .header("X-Requested-With", "XMLHttpRequest").asString
 
-    //    println(Http(DCConPackageUrl).asString)
-    println(dcConResponse)
-    println(dcConResponse.body)
-
-    //    println(Json.toJson(dcConResponse.body))
 
     val dcConJson: JsValue = Json.parse(dcConResponse.body)
-
-    //    println(dcConJson)
 
 
     dcConJson
   }
 
   // 해당 DCCon에 달린 tag들을 다 읽어옴
-  def getTags(dcConData: JsValue) = {
+  def getTags(dcConData: JsValue): Seq[JsValue] = {
 
-    val tags = (dcConData \\ TAGS)
-    println(tags)
+    val tags = dcConData \\ TAGS
+//    println(tags)
 
     tags
   }
 
-  def getTagList(dcConData: JsValue) = {
+  def getTagList(dcConData: JsValue): Seq[JsValue] = {
 
-    val tagList = (dcConData \\ TAG)
-    println(tagList)
+    val tagList = dcConData \\ TAG
+//    println(tagList)
 
     tagList
   }
 
-  def getDetail(dcConData: JsValue) = {
+  def getDetail(dcConData: JsValue): Seq[JsValue] = {
 
-    val detail = (dcConData \\ DETAIL)
-    println(detail)
+    val detail = dcConData \\ DETAIL
+//    println(detail)
 
     detail
   }
@@ -104,9 +97,84 @@ class DCConCrawler {
 
   }
 
+
+  def getDCConInfo(dcConData: JsValue): JsValue = {
+    val dcConInfo = dcConData \\ "info"
+
+    dcConInfo.head
+  }
+
+  def getDCConDetails(dcConData: JsValue): JsValue = {
+    val dcConDetails = dcConData \\ "detail"
+
+    dcConDetails.head
+  }
+
+  def getExts(dcConDetails: JsValue): Seq[JsValue] = {
+    val dcConExts = dcConDetails \\ "ext"
+
+    dcConExts
+  }
+
+  def downloadDcConImage(directoryPath: String, title: String, path: String, ext: String): Unit = {
+
+    val fileName = directoryPath + File.separator + title + "." + ext
+
+    val imageUrl = "http://dcimg5.dcinside.com/dccon.php?no="
+
+    val result = Http(imageUrl + path)
+      .header("Referer", "http://dccon.dcinside.com/")
+      .asBytes
+
+//    println(result.body)
+    val bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileName))
+    Stream.continually(bufferedOutputStream.write(result.body))
+    bufferedOutputStream.close()
+
+  }
+
   // tagList에 들어있는 tag를 하나라도 포함하고 있으면 받음
   def downloadDcCon(packageIdx: Int, tagList: List[String]): Unit = {
-    
+
+    val dcConData = getDCConData(packageIdx)
+
+    val dcConInfo = getDCConInfo(dcConData)
+    println("dcConInfo")
+    println(dcConInfo)
+    val dcConDetails = getDCConDetails(dcConData)
+    println("dcConDetails")
+    println(dcConDetails)
+
+
+    val directoryPath = "." + File.separator
+    val title = (dcConInfo \\ "title").head
+    println(title)
+
+    val file = new File(directoryPath + title.as[String])
+    file.mkdir()
+
+
+    val dcConImageTitles = getDCConImageTitles(dcConDetails)
+    val dcConPathes = getDCConPathes(dcConDetails)
+    val dcConExts = getExts(dcConDetails)
+
+
+    for(((title, path), ext) <- dcConImageTitles zip dcConPathes zip dcConExts) yield {
+      downloadDcConImage(file.getPath, title.as[String], path.as[String], ext.as[String])
+
+    }
+
+  }
+
+  def getDCConImageTitles(dcConDetails: JsValue): Seq[JsValue] = {
+    val dcConImageTitles = dcConDetails \\ "title"
+    dcConImageTitles
+  }
+
+  def getDCConPathes(dcConData: JsValue): Seq[JsValue] = {
+    val pathes = dcConData \\ "path"
+
+    pathes
   }
 
 }
