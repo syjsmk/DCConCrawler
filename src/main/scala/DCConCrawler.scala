@@ -59,10 +59,19 @@ class DCConCrawler {
       .header("Cookie", "ci_c=61e286cd35e229c36c8d24d17e4289fe")
       .header("X-Requested-With", "XMLHttpRequest").asString
 
+    println("======================================")
+    println(dcConResponse)
 
-    val dcConJson: JsValue = Json.parse(dcConResponse.body)
+    var dcConJson: JsValue = Json.obj()
+    dcConResponse.body match {
+      case "error" =>
+        println("body is error")
+      case _ =>
+        dcConJson = Json.parse(dcConResponse.body)
+    }
 
-
+//    val dcConJson: JsValue = Json.parse(dcConResponse.body)
+//
     dcConJson
   }
 
