@@ -1,7 +1,7 @@
 import java.io._
 
 import play.api.libs.json.{JsValue, Json}
-import scalaj.http.Http
+import scalaj.http.{Http, HttpOptions}
 
 class DCConCrawler {
 
@@ -46,6 +46,8 @@ class DCConCrawler {
   private val TAG = "tag"
   private val DETAIL = "detail"
   private val DIRECTORY_PATH = "./target/DCCon" + File.separator
+  private val CONN_TIMEOUT_MS = 50000
+  private val READ_TIMEOUT_MS = 50000
 
   def getDCConData(packageIdx: Int): JsValue = {
 
@@ -55,7 +57,9 @@ class DCConCrawler {
     //    val data = "ci_t=61e286cd35e229c36c8d24d17e4289fe&package_idx=15276&dcConResponse="
     val data = "ci_t=61e286cd35e229c36c8d24d17e4289fe&package_idx=" + packageIdx + "&dcConResponse="
 
+
     val dcConResponse = Http(DCConPackageUrl)
+        .timeout(connTimeoutMs = CONN_TIMEOUT_MS, readTimeoutMs = READ_TIMEOUT_MS)
       .postData(data)
       .header("Cookie", "ci_c=61e286cd35e229c36c8d24d17e4289fe")
       .header("X-Requested-With", "XMLHttpRequest").asString
