@@ -1,7 +1,14 @@
 import play.api.libs.json.{JsObject, JsValue, Json}
 import scalaj.http._
 
+
+//-i=6233 -t=(케장,케장콘,카연갤)
 object Main {
+
+  // 현재 존재하는 DCCon 수 MAX
+  private val MAX = 35729
+  private val KEJANG_OFFICIAL_1 = 6233
+  private val KEJANG_OFFICIAL_1_TAGS = List("케장", "케장콘", "카연갤")
 
   def main(args: Array[String]): Unit = {
 
@@ -25,15 +32,23 @@ object Main {
         tags = t.replace(TAGS_PREFIX, "").replaceAll("[()]", "").split(",").toList
     })
 
-    dcConCrawler.downloadDcCon(packageIdx, tags)
+//    dcConCrawler.downloadDcCon(7777)
+//    dcConCrawler.downloadDcCon(KEJANG_OFFICIAL_1)
+//    dcConCrawler.downloadDcCon(KEJANG_OFFICIAL_1, tags)
 
 
-    //    val dcConData: JsValue = dcConCrawler.getDCConData()
+//    if(packageIdx != 0) {
+//      for(i <- 6230 to 6240) {
+//        dcConCrawler.downloadDcCon(i, tags)
+//      }
+//    }
 
-    // 현재 존재하는 DCCon 수 MAX
-    val MAX = 35729
-    val KEJANG_OFFICIAL_1 = 6233
-    val KEJANG_OFFICIAL_1_TAGS = List("케장", "케장콘", "카연갤")
+    if(packageIdx != 0) {
+      for(i <- 6231 to 6235) {
+        dcConCrawler.downloadDcCon(i, tags)
+      }
+    }
+
 
 //    // \ 로 현재 노드 바로 아래 단계를 탐색함
 //    println(((dcConData \ "info") \ "package_idx").as[String])
@@ -46,8 +61,6 @@ object Main {
 //    (dcConData \\ "idx").foreach(idx => {
 //      println("idx : " + idx)
 //    })
-
-//    dcConCrawler.downloadDcCon(KEJANG_OFFICIAL_1, KEJANG_OFFICIAL_1_TAGS)
 
 
   }

@@ -45,6 +45,7 @@ class DCConCrawler {
   private val TAGS = "tags"
   private val TAG = "tag"
   private val DETAIL = "detail"
+  private val DIRECTORY_PATH = "./target/DCCon" + File.separator
 
   def getDCConData(packageIdx: Int): JsValue = {
 
@@ -101,12 +102,6 @@ class DCConCrawler {
   }
 
 
-  // 패키지 인덱스만 주면 무조건 다운받음
-  def downloadDcCon(packageIdx: Int): Unit = {
-
-  }
-
-
   def getDCConInfo(dcConData: JsValue): JsValue = {
     val dcConInfo = dcConData \\ "info"
 
@@ -123,6 +118,17 @@ class DCConCrawler {
     val dcConExts = dcConDetails \\ "ext"
 
     dcConExts
+  }
+
+  def getDCConImageTitles(dcConDetails: JsValue): Seq[JsValue] = {
+    val dcConImageTitles = dcConDetails \\ "title"
+    dcConImageTitles
+  }
+
+  def getDCConPathes(dcConData: JsValue): Seq[JsValue] = {
+    val pathes = dcConData \\ "path"
+
+    pathes
   }
 
   def downloadDcConImage(directoryPath: String, title: String, path: String, ext: String): Unit = {
@@ -142,9 +148,36 @@ class DCConCrawler {
 
   }
 
+
+  // 패키지 인덱스만 주면 무조건 다운받음
+  def downloadDcCon(packageIdx: Int): Unit = {
+
+    val (dcConInfo: JsValue, dcConDetails: JsValue, dcConTagList: Seq[JsValue]) = extract(packageIdx)
+
+    this.downloadDcCon(dcConInfo, dcConDetails)
+
+  }
+
   // tagList에 들어있는 tag를 하나라도 포함하고 있으면 받음
   def downloadDcCon(packageIdx: Int, tagList: List[String]): Unit = {
 
+    val (dcConInfo: JsValue, dcConDetails: JsValue, dcConTagList: Seq[JsValue]) = extract(packageIdx)
+
+    for(
+      dcConTagValue <- dcConTagList;
+      tagValue <- tagList
+    ) {
+//      if(tagValue.contentEquals(dcConTagValue.as[String])) {
+      if(tagValue.contains(dcConTagValue.as[String])) {
+        println("equal")
+//        this.downloadDcCon(packageIdx)
+        this.downloadDcCon(dcConInfo, dcConDetails)
+      }
+    }
+
+  }
+
+  private def extract(packageIdx: Int) = {
     val dcConData = getDCConData(packageIdx)
 
     val dcConInfo = getDCConInfo(dcConData)
@@ -153,37 +186,31 @@ class DCConCrawler {
     val dcConDetails = getDCConDetails(dcConData)
     println("dcConDetails")
     println(dcConDetails)
+    val dcConTagList = getTagList(dcConData)
+    println("dcConTagList")
+    println(dcConTagList)
+    (dcConInfo, dcConDetails, dcConTagList)
+  }
 
+  private def downloadDcCon(dcConInfo: JsValue, dcConDetails: JsValue): Unit = {
 
-    val directoryPath = "." + File.separator
+    //    val directoryPath = "./target" + File.separator
     val title = (dcConInfo \\ "title").head
     println(title)
 
-    val file = new File(directoryPath + title.as[String])
+    new File(DIRECTORY_PATH).mkdir()
+    val file = new File(DIRECTORY_PATH + title.as[String])
     file.mkdir()
-
 
     val dcConImageTitles = getDCConImageTitles(dcConDetails)
     val dcConPathes = getDCConPathes(dcConDetails)
     val dcConExts = getExts(dcConDetails)
 
-
     for(((title, path), ext) <- dcConImageTitles zip dcConPathes zip dcConExts) yield {
       downloadDcConImage(file.getPath, title.as[String], path.as[String], ext.as[String])
 
     }
-
   }
 
-  def getDCConImageTitles(dcConDetails: JsValue): Seq[JsValue] = {
-    val dcConImageTitles = dcConDetails \\ "title"
-    dcConImageTitles
-  }
-
-  def getDCConPathes(dcConData: JsValue): Seq[JsValue] = {
-    val pathes = dcConData \\ "path"
-
-    pathes
-  }
 
 }
