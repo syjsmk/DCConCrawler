@@ -71,6 +71,7 @@ class DCConCrawler {
     dcConResponse.body match {
       case "error" =>
         println("body is error")
+        dcConJson = Json.obj("" -> "")
       case _ =>
         dcConJson = Json.parse(dcConResponse.body)
     }
@@ -106,16 +107,16 @@ class DCConCrawler {
   }
 
 
-  def getDCConInfo(dcConData: JsValue): JsValue = {
-    val dcConInfo = dcConData \\ "info"
+  def getDCConInfo(dcConData: JsValue): Option[JsValue] = {
+    val dcConInfo = (dcConData \\ "info")
 
-    dcConInfo.head
+    dcConInfo.headOption
   }
 
-  def getDCConDetails(dcConData: JsValue): JsValue = {
+  def getDCConDetails(dcConData: JsValue): Option[JsValue] = {
     val dcConDetails = dcConData \\ "detail"
 
-    dcConDetails.head
+    dcConDetails.headOption
   }
 
   def getExts(dcConDetails: JsValue): Seq[JsValue] = {
@@ -156,7 +157,7 @@ class DCConCrawler {
   // 패키지 인덱스만 주면 무조건 다운받음
   def downloadDcCon(packageIdx: Int): Unit = {
 
-    val (dcConInfo: JsValue, dcConDetails: JsValue, dcConTagList: Seq[JsValue]) = extract(packageIdx)
+    val (dcConInfo: Option[JsValue], dcConDetails: Option[JsValue], dcConTagList: Seq[JsValue]) = extract(packageIdx)
 
     this.downloadDcCon(dcConInfo, dcConDetails)
 
@@ -165,7 +166,7 @@ class DCConCrawler {
   // tagList에 들어있는 tag를 하나라도 포함하고 있으면 받음
   def downloadDcCon(packageIdx: Int, tagList: List[String]): Unit = {
 
-    val (dcConInfo: JsValue, dcConDetails: JsValue, dcConTagList: Seq[JsValue]) = extract(packageIdx)
+    val (dcConInfo: Option[JsValue], dcConDetails: Option[JsValue], dcConTagList: Seq[JsValue]) = extract(packageIdx)
 
     for(
       dcConTagValue <- dcConTagList;
@@ -196,24 +197,29 @@ class DCConCrawler {
     (dcConInfo, dcConDetails, dcConTagList)
   }
 
-  private def downloadDcCon(dcConInfo: JsValue, dcConDetails: JsValue): Unit = {
+//  private def downloadDcCon(dcConInfo: JsValue, dcConDetails: JsValue): Unit = {
+  private def downloadDcCon(dcConInfo: Option[JsValue], dcConDetails: Option[JsValue]): Unit = {
 
     //    val directoryPath = "./target" + File.separator
-    val title = (dcConInfo \\ "title").head
+
+    val title = (dcConInfo.getOrElse(Json.obj("" -> "")) \\ "title").headOption
     println(title)
 
     new File(DIRECTORY_PATH).mkdir()
-    val file = new File(DIRECTORY_PATH + title.as[String])
-    file.mkdir()
+    if(title != None) {
+      val file = new File(DIRECTORY_PATH + title.get.as[String])
+      file.mkdir()
 
-    val dcConImageTitles = getDCConImageTitles(dcConDetails)
-    val dcConPathes = getDCConPathes(dcConDetails)
-    val dcConExts = getExts(dcConDetails)
+      val dcConImageTitles = getDCConImageTitles(dcConDetails.getOrElse(Json.obj("" -> "")))
+      val dcConPathes = getDCConPathes(dcConDetails.getOrElse(Json.obj("" -> "")))
+      val dcConExts = getExts(dcConDetails.getOrElse(Json.obj("" -> "")))
 
-    for(((title, path), ext) <- dcConImageTitles zip dcConPathes zip dcConExts) yield {
-      downloadDcConImage(file.getPath, title.as[String], path.as[String], ext.as[String])
+      for(((title, path), ext) <- dcConImageTitles zip dcConPathes zip dcConExts) yield {
+        downloadDcConImage(file.getPath, title.as[String], path.as[String], ext.as[String])
 
+      }
     }
+
   }
 
 

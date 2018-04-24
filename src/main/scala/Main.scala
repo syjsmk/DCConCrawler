@@ -2,8 +2,9 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import scalaj.http._
 
 
-//-i=6233 -t=(케장,케장콘,카연갤)
+// -r=1-10000 -t=(케장,케장콘,카연갤)
 // -i=6220 -r=6230-6235 -t=(케장,케장콘,카연갤)
+// 22번에서 에러
 object Main {
 
   // 현재 존재하는 DCCon 수 MAX
@@ -64,8 +65,10 @@ object Main {
         dcConCrawler.downloadDcCon(packageIdx)
       }
 
-      for(i <- range(0) to range(1)) {
-        dcConCrawler.downloadDcCon(i)
+      if(range.isEmpty == false) {
+        for(i <- range(0) to range(1)) {
+          dcConCrawler.downloadDcCon(i)
+        }
       }
 
     } else {
@@ -74,8 +77,10 @@ object Main {
         dcConCrawler.downloadDcCon(packageIdx, tags)
       }
 
-      for(i <- range(0) to range(1)) {
-        dcConCrawler.downloadDcCon(i, tags)
+      if(range.isEmpty == false) {
+        for(i <- range(0) to range(1)) {
+          dcConCrawler.downloadDcCon(i, tags)
+        }
       }
 
     }
