@@ -45,7 +45,7 @@ class DCConCrawler {
   private val TAGS = "tags"
   private val TAG = "tag"
   private val DETAIL = "detail"
-  private val DIRECTORY_PATH = "./target/DCCon" + File.separator
+  private val DIRECTORY_PATH = "./DCCon" + File.separator
   private val CONN_TIMEOUT_MS = 50000
   private val READ_TIMEOUT_MS = 50000
 
@@ -108,7 +108,7 @@ class DCConCrawler {
 
 
   def getDCConInfo(dcConData: JsValue): Option[JsValue] = {
-    val dcConInfo = (dcConData \\ "info")
+    val dcConInfo = dcConData \\ "info"
 
     dcConInfo.headOption
   }
@@ -138,6 +138,10 @@ class DCConCrawler {
 
   def downloadDcConImage(directoryPath: String, title: String, path: String, ext: String): Unit = {
 
+    // DC콘 사이즈가 119인 경우는 아무것도 없는 흰 DC콘인 경우임
+    // DC콘이 지워진 경우에도 DC콘 정보가 삭제되지는 않고 남아있기 때문에 이미지 크기로 판별해서 안받게 처리함.
+    // 이미지가 있는 경우인데 사이즈가 119인 경우도 있을지는 모르겠지만 그 경우는 어쩔 수 없는 것으로.
+    val EMPTY_IMAGE_SIZE = 119
     val fileName = directoryPath + File.separator + title + "." + ext
 
     val imageUrl = "http://dcimg5.dcinside.com/dccon.php?no="
@@ -147,9 +151,68 @@ class DCConCrawler {
       .asBytes
 
 //    println(result.body)
-    val bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileName))
-    Stream.continually(bufferedOutputStream.write(result.body))
-    bufferedOutputStream.close()
+
+    if(result.body.length != EMPTY_IMAGE_SIZE) {
+      val bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileName))
+      Stream.continually(bufferedOutputStream.write(result.body))
+      bufferedOutputStream.close()
+    }
+
+  }
+
+  def downloadDcCon(args: Array[String]): Unit = {
+
+    val PACKAGE_INDEX_PREFIX = "-i="
+    val TAGS_PREFIX = "-t="
+    val RANGE_PREFIX = "-r="
+
+    var packageIdx = 0
+    var tags = List[String]()
+    var range = List[Int]()
+
+
+    args.foreach(arg => arg match {
+      case i if i.startsWith("-i") =>
+        println("case i")
+        println(arg)
+        packageIdx = Integer.parseInt(i.replace(PACKAGE_INDEX_PREFIX, ""))
+
+      case r if r.startsWith("-r") =>
+        println("case r")
+        println(arg)
+        range = r.replace(RANGE_PREFIX, "").split("-").map(value => Integer.parseInt(value)).toList
+
+      case t if t.startsWith("-t") =>
+        println("case t")
+        println(arg)
+        tags = t.replace(TAGS_PREFIX, "").replaceAll("[()]", "").split(",").toList
+    })
+
+    if(tags.isEmpty) {
+
+      if(packageIdx != 0) {
+        downloadDcCon(packageIdx)
+      }
+
+      if(range.nonEmpty) {
+        for(i <- range.head to range.last) {
+          downloadDcCon(i)
+        }
+      }
+
+    } else {
+
+      if(packageIdx != 0) {
+        downloadDcCon(packageIdx, tags)
+      }
+
+      if(range.nonEmpty) {
+        for(i <- range.head to range.last) {
+          downloadDcCon(i, tags)
+        }
+      }
+
+    }
 
   }
 
@@ -202,21 +265,28 @@ class DCConCrawler {
 
     //    val directoryPath = "./target" + File.separator
 
-    val title = (dcConInfo.getOrElse(Json.obj("" -> "")) \\ "title").headOption
-    println(title)
+    val title = (dcConInfo.get \\ "title").headOption
+
 
     new File(DIRECTORY_PATH).mkdir()
-    if(title != None) {
-      val file = new File(DIRECTORY_PATH + title.get.as[String])
-      file.mkdir()
+    if(title.isDefined) { // title != None
 
-      val dcConImageTitles = getDCConImageTitles(dcConDetails.getOrElse(Json.obj("" -> "")))
-      val dcConPathes = getDCConPathes(dcConDetails.getOrElse(Json.obj("" -> "")))
-      val dcConExts = getExts(dcConDetails.getOrElse(Json.obj("" -> "")))
+      val DCCON_PATH = DIRECTORY_PATH + title.get.as[String]
+
+      val dcConDirectory = new File(DCCON_PATH)
+      dcConDirectory.mkdir()
+
+      val dcConImageTitles = getDCConImageTitles(dcConDetails.get)
+      val dcConPathes = getDCConPathes(dcConDetails.get)
+      val dcConExts = getExts(dcConDetails.get)
 
       for(((title, path), ext) <- dcConImageTitles zip dcConPathes zip dcConExts) yield {
-        downloadDcConImage(file.getPath, title.as[String], path.as[String], ext.as[String])
+        downloadDcConImage(dcConDirectory.getPath, title.as[String], path.as[String], ext.as[String])
 
+      }
+
+      if(dcConDirectory.list().length == 0) {
+        dcConDirectory.delete()
       }
     }
 

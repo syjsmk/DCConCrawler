@@ -15,31 +15,9 @@ object Main {
   def main(args: Array[String]): Unit = {
 
     val dcConCrawler = new DCConCrawler()
-    val PACKAGE_INDEX_PREFIX = "-i="
-    val TAGS_PREFIX = "-t="
-    val RANGE_PREFIX = "-r="
 
-    var packageIdx = 0
-    var tags = List[String]()
-    var range = List[Int]()
+    dcConCrawler.downloadDcCon(args: Array[String])
 
-
-    args.foreach(arg => arg match {
-      case i if i.startsWith("-i") =>
-        println("case i")
-        println(arg)
-        packageIdx = Integer.parseInt(i.replace(PACKAGE_INDEX_PREFIX, ""))
-
-      case r if r.startsWith("-r") =>
-        println("case r")
-        println(arg)
-        range = r.replace(RANGE_PREFIX, "").split("-").map(value => Integer.parseInt(value)).toList
-
-      case t if t.startsWith("-t") =>
-        println("case t")
-        println(arg)
-        tags = t.replace(TAGS_PREFIX, "").replaceAll("[()]", "").split(",").toList
-    })
 
 //    dcConCrawler.downloadDcCon(7777)
 //    dcConCrawler.downloadDcCon(KEJANG_OFFICIAL_1)
@@ -58,32 +36,6 @@ object Main {
 //        Thread.sleep(1)
 //      }
 //    }
-
-    if(tags.isEmpty) {
-
-      if(packageIdx != 0) {
-        dcConCrawler.downloadDcCon(packageIdx)
-      }
-
-      if(range.isEmpty == false) {
-        for(i <- range(0) to range(1)) {
-          dcConCrawler.downloadDcCon(i)
-        }
-      }
-
-    } else {
-
-      if(packageIdx != 0) {
-        dcConCrawler.downloadDcCon(packageIdx, tags)
-      }
-
-      if(range.isEmpty == false) {
-        for(i <- range(0) to range(1)) {
-          dcConCrawler.downloadDcCon(i, tags)
-        }
-      }
-
-    }
 
 
 //    // \ 로 현재 노드 바로 아래 단계를 탐색함
