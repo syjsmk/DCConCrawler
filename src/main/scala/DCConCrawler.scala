@@ -142,7 +142,7 @@ class DCConCrawler {
     // DC콘이 지워진 경우에도 DC콘 정보가 삭제되지는 않고 남아있기 때문에 이미지 크기로 판별해서 안받게 처리함.
     // 이미지가 있는 경우인데 사이즈가 119인 경우도 있을지는 모르겠지만 그 경우는 어쩔 수 없는 것으로.
     val EMPTY_IMAGE_SIZE = 119
-    val fileName = directoryPath + File.separator + title + "." + ext
+    val fileName = directoryPath.replace("/", "") + File.separator + title.replace("/", "") + "." + ext
 
     val imageUrl = "http://dcimg5.dcinside.com/dccon.php?no="
 
